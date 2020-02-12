@@ -1,0 +1,5 @@
+
+reward:
+  config:
+    bonus:
+      url: http://localhost:800/api/bonus
