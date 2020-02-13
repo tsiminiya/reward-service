@@ -23,6 +23,10 @@ public class RewardService {
         bonusApiGateway.sendBonus(bonus);
     }
 
+    public boolean isPlayerEligible(Player player) {
+        return rewardGateway.getReward(player).isPresent();
+    }
+
     private Bonus createBonus(String playerToken,
                               BigDecimal amount) {
         return new Bonus(playerToken, amount);

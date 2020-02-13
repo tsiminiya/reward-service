@@ -3,7 +3,6 @@ package com.example.reward.rewardservice.presentation;
 import com.example.reward.rewardservice.RewardServiceApplication;
 import com.example.reward.rewardservice.config.RewardServiceTestConfiguration;
 import com.example.reward.rewardservice.core.BonusApiGateway;
-import com.example.reward.rewardservice.core.model.Bonus;
 import com.example.reward.rewardservice.infrastructure.repository.RewardEntity;
 import com.example.reward.rewardservice.infrastructure.repository.RewardEntityRepository;
 import io.restassured.RestAssured;
@@ -25,7 +24,7 @@ import java.util.Optional;
         RewardServiceApplication.class,
         RewardServiceTestConfiguration.class
 })
-public class RewardTest {
+public class EligibilityTest {
 
     public static final String PLAYER_TOKEN = "abc123";
 
@@ -52,56 +51,28 @@ public class RewardTest {
     }
 
     @Test
-    public void testShouldAbleToSendBonusWhenRewardIsAvailable() {
+    public void testShouldReturnNoContentWhenPlayerIsEligible() {
         Mockito.when(rewardEntityRepository.findById(PLAYER_TOKEN))
                 .thenReturn(Optional.of(new RewardEntity(PLAYER_TOKEN, BigDecimal.TEN)));
 
         RestAssured.given()
-                .body(new PlayerRequest(PLAYER_TOKEN))
-            .when()
-                .post("/api/reward")
-            .then()
-                .log()
-                    .ifStatusCodeIsEqualTo(200)
-                    .statusCode(200);
-
-        Mockito.verify(bonusApiGateway).sendBonus(new Bonus(PLAYER_TOKEN, BigDecimal.TEN));
+                    .queryParam("token", PLAYER_TOKEN)
+                .when()
+                    .get("/api/reward")
+                .then()
+                    .log().ifStatusCodeIsEqualTo(204);
     }
 
     @Test
-    public void testShouldAbleToSendZeroBonusWhenRewardIsAvailable() {
-        Mockito.when(rewardEntityRepository.findById(PLAYER_TOKEN)).thenReturn(Optional.empty());
+    public void testShouldReturnForbiddenWhenPlayerIsNotEligible() {
+        Mockito.when(rewardEntityRepository.findById(PLAYER_TOKEN))
+                .thenReturn(Optional.empty());
 
         RestAssured.given()
-                .body(new PlayerRequest(PLAYER_TOKEN))
-            .when()
-                .post("/api/reward")
-            .then()
-                .log()
-                    .ifValidationFails()
-                    .statusCode(200);
-
-        Mockito.verify(bonusApiGateway).sendBonus(new Bonus(PLAYER_TOKEN, BigDecimal.ZERO));
+                .queryParam("token", PLAYER_TOKEN)
+                .when()
+                .get("/api/reward")
+                .then()
+                .log().ifStatusCodeIsEqualTo(403);
     }
-
-    private static class PlayerRequest {
-
-        private String playerToken;
-
-        public PlayerRequest() {
-        }
-
-        public PlayerRequest(String playerToken) {
-            this.playerToken = playerToken;
-        }
-
-        public String getPlayerToken() {
-            return playerToken;
-        }
-
-        public void setPlayerToken(String playerToken) {
-            this.playerToken = playerToken;
-        }
-    }
-
 }
